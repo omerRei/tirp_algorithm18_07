@@ -48,6 +48,10 @@ vector<Event*> generate_sub_events(Event* event, unordered_map<string, Event*>* 
 //vector<vector<int>> generate_final_outputs(vector<vector<int>> pre_outputs, Event* cur_event);
 vector<vector<int>> generate_output_from_event(string key, unordered_map<string, Event*>* dictionary);
 
+vector<vector<int>> sync_get_all_possible_outputs(unordered_map<string, Event*>* dictionary, vector<vector<int>> cur_outputs, int min_treshold, int min_level, int num_of_workers);
+
+vector<vector<int>> worker_generate_output_from_events(vector<Event*> events, unordered_map<string, Event*>* dictionary);
+
 vector<vector<int>> generate_final_outputs(int day, vector<vector<int>> pre_outputs, Event* cur_event);
 
 void user_interaction(unordered_map<string, Event*>* dictionary);
@@ -58,5 +62,7 @@ void write_activation_to_csv(vector<vector<int>> activations, string path);
 vector<vector<int>> get_all_possible_outputs(unordered_map<string, Event*>* dictionary, vector<vector<int>> cur_outputs, int min_treshold, int min_level);
 
 void listFiles(std::string path);
+
+
 
 

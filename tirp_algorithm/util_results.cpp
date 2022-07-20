@@ -94,7 +94,7 @@ vector<vector<int>> get_appliance_patterns(int** serieses, int num_of_series, in
     cout << "found after filtering:" << filtered_events.size() << endl;
     if (max_level < levels_to_include)
         max_level = levels_to_include;
-    vector<vector<int>> outs = get_all_possible_outputs(dictionary, filtered_events, min_val_in_pattern, max_level - levels_to_include);
+    vector<vector<int>> outs = sync_get_all_possible_outputs(dictionary, filtered_events, min_val_in_pattern, max_level - levels_to_include, 8);
     write_activation_to_csv(outs, output_file_name);
     cout << output_file_name << " finished succesfully" << endl;
     free_dictionary(dictionary);
@@ -488,11 +488,11 @@ void write_activation_to_csv(vector<vector<int>> activations, string path) {
 vector<vector<int>> get_all_possible_outputs(unordered_map<string, Event*>* dictionary, vector<vector<int>> cur_outputs, int min_treshold, int min_level) {
     vector<vector<int>> total_outputs;
     for (int i = 0; i < cur_outputs.size(); i++) {
-        if (cur_outputs.size() < min_level)
+        if (cur_outputs[i].size() < min_level)
             continue;
         bool flag = false;
         for (int j = 0; j < cur_outputs[i].size(); j++) {
-            if (cur_outputs[i][j] >= min_treshold)
+            if (cur_outputs[i][j] >= min_treshold )
                 flag = true;
         }
         if (flag) {
@@ -507,6 +507,63 @@ vector<vector<int>> get_all_possible_outputs(unordered_map<string, Event*>* dict
     }
     return total_outputs;
 }
+
+vector<vector<int>> sync_get_all_possible_outputs(unordered_map<string, Event*>* dictionary, vector<vector<int>> cur_outputs, int min_treshold, int min_level, int num_of_workers) {
+    vector<Event*> total_events;
+    for (int i = 0; i < cur_outputs.size(); i++) {
+        if (cur_outputs[i].size() < min_level)
+            continue;
+        bool flag = false;
+        for (int j = 0; j < cur_outputs[i].size(); j++) {
+            if (cur_outputs[i][j] >= min_treshold)
+                flag = true;
+        }
+        if (flag) {
+            string key = "";
+            for (int j = 0; j < cur_outputs[i].size(); j++) {
+                key += std::to_string(cur_outputs[i][j]) + ",";
+            }
+            Event* event = dictionary->find(key)->second;
+            total_events.push_back(event);
+        }
+    }
+    vector<vector<Event*>> all_vectors;
+    int size_of_vector = int(total_events.size() / num_of_workers);
+    if (!size_of_vector)
+        size_of_vector = 1;
+    for (size_t i = 0; i < total_events.size(); i += size_of_vector) {
+        int last;
+        if (total_events.size() < i + size_of_vector)
+            last = total_events.size();
+        else
+            last = i + size_of_vector;
+        all_vectors.emplace_back(total_events.begin() + i, total_events.begin() + last);
+    }
+    vector < future < vector<vector<int>>>> futures;
+    for (int i = 0; i < all_vectors.size(); i++) {
+        vector<int> poseb{ 1,2,3,4,5,6,7,-1,-2,-3,-4,-5,-6,-7 };
+        futures.emplace_back(async(worker_generate_output_from_events, all_vectors[i], dictionary));
+    }
+    vector<vector<int>> total_outputs;
+    for (int i = 0; i < futures.size(); i++) {
+        vector<vector<int>> ret_vec = futures[i].get();
+        total_outputs.insert(total_outputs.end(), ret_vec.begin(), ret_vec.end());
+    }
+    return total_outputs;
+}
+
+
+
+vector<vector<int>> worker_generate_output_from_events(vector<Event*> events, unordered_map<string, Event*>* dictionary) {
+    vector<vector<int>> total_outputs;
+    for (Event* event : events) {
+        vector<vector<int>> outs = generate_output_from_event(event->get_key(), dictionary);
+        total_outputs.insert(total_outputs.end(), outs.begin(), outs.end());
+    }
+    return total_outputs;
+}
+
+
 
 void user_interaction(unordered_map<string, Event*>* dictionary) {
     string ans;
@@ -552,10 +609,10 @@ vector<vector<int>> generate_output_from_event(string key, unordered_map<string,
             vector<vector<int>> new_series_output;
             for (int j = 0; j < series_output.size(); j++) {
                 //
-                if (series_indexes->size() > max_comb * max_comb) {
+                if (series_indexes->size() > max_comb ) {
                     int jump = series_indexes->size() / max_comb;
                     for (int k = 0; k < series_indexes->size(); k += jump) {
-                        if (series_indexes->at(k)->first > series_output[j].back()) {
+                        if (series_indexes->at(k)->first > series_output[j].back()) { 
                             vector<int> new_vec = series_output[j];
                             new_vec.push_back(series_indexes->at(k)->first);
                             if (new_vec.back() - new_vec[0] < Event::get_total_size_of_event())
@@ -573,16 +630,6 @@ vector<vector<int>> generate_output_from_event(string key, unordered_map<string,
                         }
                     }
                 }
-                //
-
-                /*for (int k = 0; k < series_indexes->size(); k++) {
-                    if (series_indexes->at(k)->first > series_output[j].back()) {
-                        vector<int> new_vec = series_output[j];
-                        new_vec.push_back(series_indexes->at(k)->first);
-                        if (new_vec.back() - new_vec[0] < Event::get_total_size_of_event())
-                            new_series_output.push_back(new_vec);
-                    }
-                }*/
             }
             series_output.clear();
             for (int j = 0; j < new_series_output.size(); j++) {

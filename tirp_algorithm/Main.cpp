@@ -69,7 +69,7 @@ int main() {
 
 	vector<vector<int>> appliances_patterns = get_appliance_common_patterns("C:/Users/omer/PycharmProjects/pythonProject1/houses_data/generated_csvs", "washing machine", 0.15, 4);
 	Single_appliance::set_patterns(appliances_patterns);
-	Single_appliance::set_threshold(0.5);
+	Single_appliance::set_threshold(0.35);
 	for (auto& dirEntry : std::filesystem::recursive_directory_iterator("C:/Users/Omer/PycharmProjects/pythonProject1/houses_data/tirps_dataset3_2")) {
 		if (!dirEntry.is_regular_file()) {
 			std::cout << "Directory: " << dirEntry.path().string() << std::endl;
@@ -86,7 +86,7 @@ int main() {
 			cout << output_file_path << "file exists" << endl;
 		}
 		else {
-			main_one__month_one_faze(full_file_path, output_file_path, 0.15);
+			main_one__month_one_faze(full_file_path, output_file_path, 0.19);
 		}
 
 	}

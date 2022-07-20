@@ -259,7 +259,7 @@ unordered_map<string, Event*>* tirp_algorithm(int** list_of_series, int size_of_
     int* single_possibilities = get_possibilities_array(dictionary);
     cout << cur_level << " end with:" << possibilities_num << endl;
     int candidates_num = get_num_of_candidates(dictionary, cur_level);
-    while (candidates_num > 1 && cur_level < 10 && candidates_num < 400000) {
+    while (candidates_num > 1 && cur_level < 7 && candidates_num < 400000) {
         cur_level += 1;
         if (num_of_workers > 1)
             iteration2(dictionary, cur_level, single_possibilities, possibilities_num, min_sup, size_of_list_series, num_of_workers);
