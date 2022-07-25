@@ -1,4 +1,7 @@
 #pragma once
+#ifndef FILE_UTIL_FUNCTIONS_SEEN
+#define FILE_UTIL_FUNCTIONS_SEEN
+
 #include "Event.h"
 #include <iostream>
 #include <fstream>
@@ -46,3 +49,6 @@ void worker_create_possible_pairs(int task_num, unordered_map<string, Event*>* d
 
 double dtw(vector<int> first_arr, vector<int> second_arr);
 bool is_patternts_similar(int* total_events, int size);
+
+
+#endif

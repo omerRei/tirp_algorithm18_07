@@ -1,4 +1,6 @@
 #pragma once
+#ifndef FILE_SINGLE_APPLIANCE_SEEN
+#define FILE_SINGLE_APPLIANCE_SEEN
 #include <vector>
 using namespace std;
 
@@ -16,3 +18,5 @@ public:
 	static void free_appliances_patterns();
 };
 
+
+#endif

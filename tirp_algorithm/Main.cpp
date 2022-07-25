@@ -26,35 +26,37 @@ static void main_one__month_one_faze(string path_to_csv_file, string output_file
 	free_2dim_array(parray, lines_size);
 }
 
-static vector<vector<int>> get_appliance_common_patterns(string dir_path, string app_name, double threshold, int level_to_get) {
+static vector<vector<int>> get_appliance_common_patterns(string dir_path, vector<string> apps, double threshold, int level_to_get) {
 	vector<vector<int>> ret_vecs;
-	for (auto& dirEntry : std::filesystem::recursive_directory_iterator(dir_path)) { //"C:/Users/omer/PycharmProjects/pythonProject1/houses_data/generated_csvs"
-		if (!dirEntry.is_regular_file()) {
-			std::cout << "Directory: " << dirEntry.path().string() << std::endl;
-			continue;
-		}
-		std::filesystem::path file = dirEntry.path();
-		string file_name = file.filename().string();
+	for (string app_name : apps) {
+		for (auto& dirEntry : std::filesystem::recursive_directory_iterator(dir_path)) {
+			if (!dirEntry.is_regular_file()) {
+				std::cout << "Directory: " << dirEntry.path().string() << std::endl;
+				continue;
+			}
+			std::filesystem::path file = dirEntry.path();
+			string file_name = file.filename().string();
 
-		if (file_name.find(app_name) != std::string::npos) {
-			string path_to_csv_file = file.parent_path().string().substr(0, file.parent_path().string().find("\\")) + "/" + "/" + file_name;
-			int lines_size = get_number_of_rows_in_csv(path_to_csv_file);
-			int series_size = get_row_length_in_csv(path_to_csv_file);
-			int** parray = read_activations_csv(path_to_csv_file);
-			vector<vector<int>> temp_ret_vecs = get_specific_appliance_patterns(parray, lines_size, series_size, 0, threshold, false, 2, level_to_get);
-			for (vector<int> first_vec : temp_ret_vecs) {
-				bool found = false;
-				for (vector<int> second_vec : ret_vecs) {
-					if (first_vec == second_vec) {
-						found = true;
-						break;
+			if (file_name.find(app_name) != std::string::npos) {
+				string path_to_csv_file = file.parent_path().string().substr(0, file.parent_path().string().find("\\")) + "/" + "/" + file_name;
+				int lines_size = get_number_of_rows_in_csv(path_to_csv_file);
+				int series_size = get_row_length_in_csv(path_to_csv_file);
+				int** parray = read_activations_csv(path_to_csv_file);
+				vector<vector<int>> temp_ret_vecs = get_specific_appliance_patterns(parray, lines_size, series_size, 0, threshold, false, 2, level_to_get);
+				for (vector<int> first_vec : temp_ret_vecs) {
+					bool found = false;
+					for (vector<int> second_vec : ret_vecs) {
+						if (first_vec == second_vec) {
+							found = true;
+							break;
+						}
+					}
+					if (!found) {
+						ret_vecs.push_back(first_vec);
 					}
 				}
-				if (!found) {
-					ret_vecs.push_back(first_vec);
-				}
+				free_2dim_array(parray, lines_size);
 			}
-			free_2dim_array(parray, lines_size);
 		}
 	}
 	return ret_vecs;
@@ -67,7 +69,8 @@ int main() {
 	vector<int> b = { 2,6,3,4 };
 	cout << dtw(a, b);*/
 
-	vector<vector<int>> appliances_patterns = get_appliance_common_patterns("C:/Users/omer/PycharmProjects/pythonProject1/houses_data/generated_csvs", "washing machine", 0.15, 4);
+	vector<string> appliances = { "washing machine","microwave", "dish washer", "washer dryer"};
+	vector<vector<int>> appliances_patterns = get_appliance_common_patterns("C:/Users/omer/PycharmProjects/pythonProject1/houses_data/generated_csvs", appliances, 0.15, 4);
 	Single_appliance::set_patterns(appliances_patterns);
 	Single_appliance::set_threshold(0.35);
 	for (auto& dirEntry : std::filesystem::recursive_directory_iterator("C:/Users/Omer/PycharmProjects/pythonProject1/houses_data/tirps_dataset3_2")) {
@@ -77,8 +80,11 @@ int main() {
 		}
 		std::filesystem::path file = dirEntry.path();
 		string file_name = file.filename().string();
+		if (file_name.find("2021") == std::string::npos) {
+			continue;
+		}
 		string house_num = file.parent_path().string().substr(file.parent_path().string().find("\\") + 1);
-		string output_file_path = "C:/Users/Omer/PycharmProjects/pythonProject1/houses_data/dataset4_3/" + house_num + +"/" + file_name;
+		string output_file_path = "C:/Users/Omer/PycharmProjects/pythonProject1/houses_data/dataset4_4/" + house_num + +"/" + file_name;
 		string full_file_path = file.parent_path().string().substr(0, file.parent_path().string().find("\\")) + "/" + house_num + +"/" + file_name;
 		ifstream ifile;
 		ifile.open(output_file_path);

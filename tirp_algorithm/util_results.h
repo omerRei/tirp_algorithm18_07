@@ -1,4 +1,7 @@
 #pragma once
+#ifndef FILE_UTIL_RESULTS_SEEN
+#define FILE_UTIL_RESULTS_SEEN
+
 #include "Event.h"
 #include <iostream>
 #include <fstream>
@@ -63,6 +66,8 @@ vector<vector<int>> get_all_possible_outputs(unordered_map<string, Event*>* dict
 
 void listFiles(std::string path);
 
+
+#endif
 
 
 
