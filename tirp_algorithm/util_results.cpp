@@ -59,12 +59,12 @@
 
 vector<vector<int>> get_appliance_patterns(int** serieses, int num_of_series, int series_size, float round_num, float threshold, bool to_print, int num_of_workers, string output_file_name) {
     int levels_to_include = 6;
-    int min_val_in_pattern = 3;
+    int min_val_in_pattern = 5;
     int error_from_completion = 2;
     unordered_map<string, Event*>* dictionary = tirp_algorithm(serieses, num_of_series, series_size, round_num, threshold, num_of_workers);
     vector<vector<int>> events;
     int max_level = get_max_level(dictionary);
-    for (int level = 2; level <= max_level; level++) {
+    for (int level = 3; level <= max_level; level++) {
         vector<Event*> temp_v = get_events_from_level(dictionary, level);
         for (int i = 0; i < temp_v.size(); i++) {
             vector<int> events_chain;

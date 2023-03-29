@@ -46,6 +46,8 @@ int get_all_appliances_row_size(string appliance_name, string path);
 void free_2dim_array(int** parray, int num_of_rows);
 void worker_create_possible_pairs(int task_num, unordered_map<string, Event*>* dictionary, vector<string> first_keys, int* probabilities_array, int size_of_posebilities, int cur_level, float min_sup, int support_denominator, mutex* g_mutex);
 
+int ac_algorithm(int** list_of_series, int size_of_list_series, int size_of_series, int round_in, float min_sup, int num_of_workers);
+int count_appearnces(Event* p_event);
 
 double dtw(vector<int> first_arr, vector<int> second_arr);
 bool is_patternts_similar(int* total_events, int size);

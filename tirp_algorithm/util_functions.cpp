@@ -193,6 +193,7 @@ void iteration2(unordered_map<string, Event*>* dictionary, int cur_level, int* p
     int size_of_vector = int(all_keys.size() / num_of_workers);
     if (!size_of_vector)
         size_of_vector = 1;
+    int max_size = 0;
     for (size_t i = 0; i < all_keys.size(); i += size_of_vector) {
         int last;
         if (all_keys.size() < i + size_of_vector)
@@ -200,6 +201,8 @@ void iteration2(unordered_map<string, Event*>* dictionary, int cur_level, int* p
         else
             last = i + size_of_vector;
         all_vectors.emplace_back(all_keys.begin() + i, all_keys.begin() + last);
+        if (last > 500000)
+            break;
     }
     vector<thread> threads;
     for (int i = 0; i < all_vectors.size(); i++) {
@@ -232,6 +235,8 @@ void worker_iteration(int task_num, unordered_map<string, Event*>* dictionary, v
             dictionary->insert({ new_event->get_key(), new_event });
             g_mutex->unlock();
         }
+        if (dictionary->size() > 600000)
+            break;
     }
 }
 
@@ -259,7 +264,7 @@ unordered_map<string, Event*>* tirp_algorithm(int** list_of_series, int size_of_
     int* single_possibilities = get_possibilities_array(dictionary);
     cout << cur_level << " end with:" << possibilities_num << endl;
     int candidates_num = get_num_of_candidates(dictionary, cur_level);
-    while (candidates_num > 1 && cur_level < 7 && candidates_num < 200000) {
+    while (candidates_num > 1 && cur_level < 7 && candidates_num < 250000) {
         cur_level += 1;
         if (num_of_workers > 1)
             iteration2(dictionary, cur_level, single_possibilities, possibilities_num, min_sup, size_of_list_series, num_of_workers);
@@ -269,6 +274,76 @@ unordered_map<string, Event*>* tirp_algorithm(int** list_of_series, int size_of_
         cout << cur_level << "end with:" << candidates_num << endl;
     }
     return dictionary;
+}
+
+int ac_algorithm(int** list_of_series, int size_of_list_series, int size_of_series, int round_in, float min_sup, int num_of_workers) {
+    int cur_level = 1;
+    unordered_map<string, Event*>* dictionary = first_iteration(list_of_series, size_of_list_series, size_of_series, round_in);
+    remove_uncommon(dictionary, cur_level, min_sup, size_of_list_series);
+    int possibilities_num = get_num_of_candidates(dictionary, cur_level);
+    int* single_possibilities = get_possibilities_array(dictionary);
+    cout << cur_level << " end with:" << possibilities_num << endl;
+    int candidates_num = get_num_of_candidates(dictionary, cur_level);
+    while (candidates_num > 1 && cur_level < 4) {
+        cur_level += 1;
+        if (num_of_workers > 1)
+            iteration2(dictionary, cur_level, single_possibilities, possibilities_num, min_sup, size_of_list_series, num_of_workers);
+        else
+            iteration(dictionary, cur_level, single_possibilities, possibilities_num, min_sup, size_of_list_series);
+        candidates_num = get_num_of_candidates(dictionary, cur_level);
+        cout << cur_level << "end with:" << candidates_num << endl;
+    }
+    if (get_num_of_candidates(dictionary, 2) == 0)
+        return 0;
+    unordered_map<string, Event*>::iterator it;
+    Event* max_event = nullptr;
+    int max_cnt = 0;
+    for (it = dictionary->begin(); it != dictionary->end(); it++)
+    {
+        Event* p_event = it->second;
+        if (p_event->level == 4) {
+            if (p_event->total_events[0] > 0) {
+                int value = p_event->total_events[0];
+                if (value == -p_event->total_events[1] && value == p_event->total_events[2] && value == -p_event->total_events[3]) {
+                    int cur_cnt = count_appearnces(p_event);
+                    if (cur_cnt > max_cnt) {
+                        max_cnt = cur_cnt;
+                        max_event = p_event;
+                    }
+                }
+            }
+        }
+    }
+    if (!max_event) {
+        cout << "max event: " << "no max" << endl;
+        return max_cnt;
+    }
+    cout << "max event: " << max_event->get_key() << endl;
+    return max_cnt;
+}
+
+int count_appearnces(Event* p_event) {
+    map<int, vector<pair<int, tuple<int, vector<int>*, int>*>*>*>* appearnces = p_event->appearances;
+    map<int, vector<pair<int, tuple<int, vector<int>*, int>*>*>*>::iterator it;
+    int count = 0;
+    for (it = appearnces->begin(); it != appearnces->end(); it++) {
+        vector<pair<int, tuple<int, vector<int>*, int>*>*>* p_day = it->second;
+        //check time difference and possibly night hours
+        for (int i = 0; i < p_day->size(); i++) {
+            pair<int, tuple<int, vector<int>*, int>*>* p_pair = p_day->at(i);
+            int start_time = p_pair->first;
+            int s = get<0>(*(p_pair->second));
+            int f = get<2>(*(p_pair->second));
+            vector<int>* vec = get<1>(*(p_pair->second));
+            for (int j = s; j <= f;j++) {
+                int dur = vec->at(j) - start_time;
+                if (dur > 20 && dur < 90) {
+                    count += dur;
+                }
+            }
+        }
+    }
+    return count;
 }
 
 int* get_possibilities_array(unordered_map<string, Event*>* dictionary) {
